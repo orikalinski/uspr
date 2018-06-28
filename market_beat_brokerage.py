@@ -25,13 +25,20 @@ class MarketBeatBrokerage(object):
         self.url = "{}/ratings/by-issuer/%s/".format(self.base_url)
         self.relevant_fields = ["date", "brokerage", "action", "rating", "price_target"]
         self.already_called_companies = set()
+        self.sign_to_currency = {"$": "USD", "€": "EURO"}
 
-    @staticmethod
-    def parse_price_field_into_dollar_price(price_text, date_dollar_converters):
+    def parse_price_field_into_dollar_price(self, price_text, date_dollar_converters):
         new_price_field = price_text.split("➝")[-1].strip()
         if new_price_field:
-            currency, price = new_price_field.split()
-            price = price.replace(",", "")
+            split_data = new_price_field.split()
+            if len(split_data) > 1:
+                currency, price = split_data
+                price = price.replace(",", "")
+            elif len(split_data) == 1:
+                currency = self.sign_to_currency[new_price_field[0]]
+                price = new_price_field[1:]
+            else:
+                return
             return float(price) * date_dollar_converters.get(currency, 1)
 
     def get_all_data(self):
